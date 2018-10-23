@@ -70,7 +70,7 @@ struct codel_status {
 	uint16_t	dropping;	/* dropping state */
 	aqm_time_t	drop_next_time;	/* time for next drop */
 	aqm_time_t	first_above_time;	/* time for first ts over target we observed */
-	uint16_t	isqrt;	/* last isqrt for control low */
+	uint16_t	inv;	/* last inv for control low */
 	uint16_t	maxpkt_size;	/* max packet size seen so far */
 };
 
@@ -211,8 +211,8 @@ codel_dequeue(struct dn_queue *q)
 		cst->count = (cst->count > 2 && ((aqm_stime_t)now - 
 			(aqm_stime_t)cst->drop_next_time) < 8* cprms->interval)?
 				cst->count - 2 : 1;
-		/* we don't have to set initial guess for Newton's method isqrt as
-		 * we initilaize  isqrt in control_law function when count == 1 */
+		/* we don't have to set initial guess for Newton's method inv as
+		 * we initilaize  inv in control_law function when count == 1 */
 		cst->drop_next_time = control_law(cst, cprms, now);
 	}
 	

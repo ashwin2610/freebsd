@@ -74,7 +74,7 @@
 static struct dn_aqm codel_desc;
 
 /* default codel parameters */
-struct dn_aqm_codel_parms codel_sysctl = {5000 * AQM_TIME_1US,
+struct dn_aqm_codel_parms codel_sysctl = {30000 * AQM_TIME_1US,
 	100000 * AQM_TIME_1US, 0};
 
 static int
@@ -144,37 +144,33 @@ control_law(struct codel_status *cst, struct dn_aqm_codel_parms *cprms,
 	uint64_t temp;
 	count = cst->count;
 
-	/* we don't calculate isqrt(1) to get more accurate result*/
+	/* we don't calculate inv(1) to get more accurate result*/
 	if (count == 1) {
-		/* prepare isqrt (old guess) for the next iteration i.e. 1/sqrt(2)*/
-		cst->isqrt = (1UL<< FIX_POINT_BITS) * 7/10;
-		/* return time + isqrt(1)*interval */
+		/* prepare inv (old guess) for the next iteration i.e. (1/2)*/
+		cst->inv = (1UL<< FIX_POINT_BITS) * 5/10;
+		/* return time + inv(1)*interval */
 		return t + cprms->interval;
 	}
 
-	/* newguess = g(1.5 - 0.5*c*g^2)
-	 * Multiplying both sides by 2 to make all the constants intergers
-	 * newguess * 2  = g(3 - c*g^2) g=old guess, c=count
-	 * So, newguess = newguess /2
+	/* newguess = g(2 - c*g)
 	 * Fixed point operations are used here.  
 	 */
 
-	/* Calculate g^2 */
-	temp = (uint32_t) cst->isqrt * cst->isqrt;
+	/* Store g in temp */
+	temp = (uint32_t) cst->inv;
 	/* Calculate (3 - c*g^2) i.e. (3 - c * temp) */
-	temp = (3ULL<< (FIX_POINT_BITS*2)) - (count * temp);
+	temp = (2ULL<< (FIX_POINT_BITS*2)) - (count * temp);
 
 	/* 
-	 * Divide by 2 because we multiplied the original equation by two 
-	 * Also, we shift the result by 8 bits to prevent overflow. 
+	 * We shift the result by 8 bits to prevent overflow. 
 	 * */
-	temp >>= (1 + 8); 
+	temp >>= (8); 
 
-	/*  Now, temp = (1.5 - 0.5*c*g^2)
-	 * Calculate g (1.5 - 0.5*c*g^2) i.e. g * temp 
+	/*  Now, temp = (2 - c*g)
+	 * Calculate g (2 - c*g) i.e. g * temp 
 	 */
-	temp = (cst->isqrt * temp) >> (FIX_POINT_BITS + FIX_POINT_BITS - 8);
-	cst->isqrt = temp;
+	temp = (cst->inv * temp) >> (FIX_POINT_BITS + FIX_POINT_BITS - 8);
+	cst->inv = temp;
 
 	 /* calculate codel_interval/sqrt(count) */
 	 return t + ((cprms->interval * temp) >> FIX_POINT_BITS);
