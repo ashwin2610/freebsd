@@ -74,8 +74,8 @@
 static struct dn_aqm codel_desc;
 
 /* default codel parameters */
-struct dn_aqm_codel_parms codel_sysctl = {30000 * AQM_TIME_1US,
-	100000 * AQM_TIME_1US, 0};
+struct dn_aqm_codel_parms codel_sysctl = {5000 * AQM_TIME_1US,
+	30000 * AQM_TIME_1US, 0};
 
 static int
 codel_sysctl_interval_handler(SYSCTL_HANDLER_ARGS)
