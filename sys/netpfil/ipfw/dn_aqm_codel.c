@@ -157,7 +157,7 @@ control_law(struct codel_status *cst, struct dn_aqm_codel_parms *cprms,
 	 */
 
 	/* Store g in temp */
-	temp = (uint32_t) cst->inv;
+	temp = (uint32_t) cst->inv << FIX_POINT_BITS;
 	/* Calculate (3 - c*g^2) i.e. (3 - c * temp) */
 	temp = (2ULL<< (FIX_POINT_BITS*2)) - (count * temp);
 
